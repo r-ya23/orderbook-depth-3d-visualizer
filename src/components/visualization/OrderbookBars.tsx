@@ -168,63 +168,6 @@ const OrderbookBars = () => {
         );
       })}
 
-      {/* Simplified current time plane */}
-      <mesh position={[5, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[10, 5]} />
-        <meshBasicMaterial
-          color="gray"
-          transparent
-          opacity={0.05}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      {/* Simplified quantity plane */}
-      <mesh position={[5, 2.5, 0]} rotation={[0, 0, 0]}>
-        <planeGeometry args={[10, 5]} />
-        <meshBasicMaterial
-          color="green"
-          transparent
-          opacity={0.05}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      {/* Simplified price plane */}
-      <mesh position={[5, 2.5, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <planeGeometry args={[5, 5]} />
-        <meshBasicMaterial
-          color="red"
-          transparent
-          opacity={0.05}
-          side={THREE.DoubleSide}
-        />
-        <Text
-          position={[0, 0, 0.1]}
-          rotation={[0, 0, 0]}
-          fontSize={0.5}
-          color="white"
-        >
-          Price
-        </Text>
-      </mesh>
-
-      {/* Labels for other planes */}
-      <Text
-        position={[5, 0.1, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={0.5}
-        color="white"
-      >
-        Time
-      </Text>
-      <Text
-        position={[5, 2.5, 0.1]}
-        fontSize={0.5}
-        color="white"
-      >
-        Quantity
-      </Text>
     </group>
   );
 };

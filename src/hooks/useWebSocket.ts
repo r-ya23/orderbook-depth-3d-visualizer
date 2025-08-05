@@ -56,6 +56,8 @@ export const useWebSocket = (options: UseWebSocketOptions = {}): UseWebSocketRet
       setupClientCallbacks();
       if (autoConnect && !client.isConnected() && venues[venue as VenueId].enabled) {
         connect();
+      } else if (client.isConnected() && !venues[venue as VenueId].enabled) {
+        disconnect();
       }
     }
   }, [venue, autoConnect, venues]);
@@ -110,6 +112,9 @@ export const useWebSocket = (options: UseWebSocketOptions = {}): UseWebSocketRet
     });
 
     client.onUpdate((update: OrderbookUpdate) => {
+      // This is not called for Binance anymore, but we keep it for other venues
+      if (venue === 'binance') return;
+
       console.log('Received orderbook update:', update.symbol, 'Updates:', update.bids.length + update.asks.length);
       
       // Apply bid updates

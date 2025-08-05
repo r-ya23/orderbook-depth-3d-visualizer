@@ -1,15 +1,31 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { toggleVenue } from "@/store/filterslice";
+import { setShowNoVenuePopup, toggleVenue } from "@/store/filterslice";
 import { VenueId } from "@/types/venue";
 import webSocketManager from "@/lib/api/websocket";
 
 const ControlPanel = () => {
   const dispatch = useDispatch();
   const { venues } = useSelector((state: RootState) => state.filters);
+  const novenueselected=useSelector((state:RootState)=>state.filters.showNoVenuePopup)
+  const enabledVenues = Object.keys(venues).filter(
+      (venue) => venues[venue as keyof typeof venues].enabled
+    );
+  
+    useEffect(() => {
+      if (enabledVenues.length === 0) {
+        dispatch(setShowNoVenuePopup(true));
+        // console.log("No venue selected",novenueselected);
+        // return () => clearTimeout(timer);
+      }
+      else{
+        dispatch(setShowNoVenuePopup(false));
+        // console.log("No venue selected", novenueselected);
+      }
+    }, [enabledVenues]);
 
   const handleVenueToggle = (venue: string) => {
     const venueId = venue as VenueId;

@@ -6,6 +6,7 @@ import OrderbookBars from "./OrderbookBars";
 import SimpleLabeledAxes from "./LabeledAxes";
 import CSS3DAxes from "./CSS3DAxes";
 import * as THREE from "three";
+import OrderbookDepthChart from "../ui/DepthChart";
 
 const OrderbookScene = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -56,6 +57,8 @@ const OrderbookScene = () => {
 
   return (
     <div style={{ width: "100%", height: "100vh" }} ref={canvasRef}>
+      <OrderbookDepthChart />
+
       <Canvas
         camera={{
           position: [15, 10, 15],
@@ -75,19 +78,9 @@ const OrderbookScene = () => {
         {/* Simplified lighting to reduce GPU load */}
         <ambientLight intensity={0.4} />
         <directionalLight position={[10, 10, 5]} intensity={0.8} />
-        {/* Add the Grid component */}
-        {/* <Grid
-          args={[10, 10]} // Size and divisions
-          position={[0, 0, 0]} // Position of the grid
-          sectionColor="hotpink" // Color of grid sections
-          cellColor="white" // Color of individual cells
-        /> */}
+        
         {/* Your components */}
-
-        {/* <CSS3DAxes /> */}
-
-        {/* <SimpleLabeledAxes axisLength={10} /> */}
-        <OrderbookBars />
+        {/* <OrderbookBars/> */}
 
         {/* Controls */}
         <OrbitControls

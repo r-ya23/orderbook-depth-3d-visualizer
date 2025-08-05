@@ -11,27 +11,15 @@ interface BinanceDepthSnapshot {
   asks: [string, string][]; // [price, quantity]
 }
 
-interface BinanceDepthUpdate {
-  e: string; // Event type
-  E: number; // Event time
-  s: string; // Symbol
-  U: number; // First update ID in event
-  u: number; // Final update ID in event
-  b: [string, string][]; // Bids to be updated [price, quantity]
-  a: [string, string][]; // Asks to be updated [price, quantity]
-}
-
 export class BinanceWebSocketClient implements ExchangeWebSocketClient {
   private ws: WebSocket | null = null;
   private symbol: string;
   private depth: number;
-  private updateSpeed: string;
+  private updateSpeed: string; // This is no longer used for the stream URL but kept for constructor compatibility
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private isConnecting = false;
-  private lastUpdateId = 0;
-  private snapshotFetched = false;
 
   // Callbacks
   private onSnapshotCallback?: (snapshot: OrderbookSnapshot) => void;
@@ -46,7 +34,13 @@ export class BinanceWebSocketClient implements ExchangeWebSocketClient {
     updateSpeed: string = '100ms'
   ) {
     this.symbol = symbol.toUpperCase();
-    this.depth = depth;
+    // For partial book depth stream, depth must be 5, 10, or 20.
+    if (![5, 10, 20].includes(depth)) {
+      console.warn(`Binance partial book depth stream only supports levels 5, 10, or 20. Defaulting to 20.`);
+      this.depth = 20;
+    } else {
+      this.depth = depth;
+    }
     this.updateSpeed = updateSpeed;
   }
 
@@ -56,6 +50,7 @@ export class BinanceWebSocketClient implements ExchangeWebSocketClient {
   }
 
   onUpdate(callback: (update: OrderbookUpdate) => void) {
+    // This client now uses snapshots, so onUpdate will not be called.
     this.onUpdateCallback = callback;
   }
 
@@ -80,11 +75,8 @@ export class BinanceWebSocketClient implements ExchangeWebSocketClient {
     this.isConnecting = true;
 
     try {
-      // First, fetch the initial snapshot
-      await this.fetchSnapshot();
-
-      // Then connect to the WebSocket stream
-      const streamName = `${this.symbol.toLowerCase()}@depth${this.depth}@${this.updateSpeed}`;
+      // Use Partial Book Depth Stream which sends snapshots
+      const streamName = `${this.symbol.toLowerCase()}@depth${this.depth}`;
       const wsUrl = `${BINANCE_WS_BASE_URL}/${streamName}`;
 
       this.ws = new WebSocket(wsUrl);
@@ -98,8 +90,8 @@ export class BinanceWebSocketClient implements ExchangeWebSocketClient {
 
       this.ws.onmessage = (event) => {
         try {
-          const data: BinanceDepthUpdate = JSON.parse(event.data);
-          this.handleDepthUpdate(data);
+          const data: BinanceDepthSnapshot = JSON.parse(event.data);
+          this.handleSnapshotMessage(data);
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
           this.onErrorCallback?.('Error parsing WebSocket message');
@@ -130,90 +122,36 @@ export class BinanceWebSocketClient implements ExchangeWebSocketClient {
     }
   }
 
-  // Fetch initial orderbook snapshot from REST API
-  private async fetchSnapshot(): Promise<void> {
-    try {
-      const response = await fetch(
-        `https://api.binance.com/api/v3/depth?symbol=${this.symbol}&limit=${this.depth * 2}`
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: BinanceDepthSnapshot = await response.json();
-      
-      // Store the last update ID for synchronization
-      this.lastUpdateId = data.lastUpdateId;
-      this.snapshotFetched = true;
-
-      // Convert to our format
-      const snapshot: OrderbookSnapshot = {
-        symbol: this.symbol,
-        venue: 'binance',
-        timestamp: Date.now(),
-        lastUpdateId: data.lastUpdateId,
-        bids: data.bids.map(([price, quantity]) => ({
-          price: parseFloat(price),
-          quantity: parseFloat(quantity),
-          timestamp: Date.now(),
-          venue: 'binance'
-        })),
-        asks: data.asks.map(([price, quantity]) => ({
-          price: parseFloat(price),
-          quantity: parseFloat(quantity),
-          timestamp: Date.now(),
-          venue: 'binance'
-        }))
-      };
-
-      this.onSnapshotCallback?.(snapshot);
-    } catch (error) {
-      console.error('Failed to fetch orderbook snapshot:', error);
-      this.onErrorCallback?.('Failed to fetch initial orderbook snapshot');
-      throw error;
-    }
-  }
-
-  // Handle depth update messages
-  private handleDepthUpdate(data: BinanceDepthUpdate): void {
-    // Skip updates that are older than our snapshot
-    if (!this.snapshotFetched || data.u <= this.lastUpdateId) {
-      return;
-    }
-
-    // Convert to our format
-    const update: OrderbookUpdate = {
+  private handleSnapshotMessage(data: BinanceDepthSnapshot): void {
+    const snapshot: OrderbookSnapshot = {
       symbol: this.symbol,
       venue: 'binance',
-      timestamp: data.E,
-      eventType: 'update',
-      firstUpdateId: data.U,
-      finalUpdateId: data.u,
-      bids: (data.b || []).map(([price, quantity]) => ({
+      timestamp: Date.now(),
+      lastUpdateId: data.lastUpdateId,
+      bids: data.bids.map(([price, quantity]) => ({
         price: parseFloat(price),
         quantity: parseFloat(quantity),
-        timestamp: data.E,
+        timestamp: Date.now(),
         venue: 'binance'
       })),
-      asks: (data.a || []).map(([price, quantity]) => ({
+      asks: data.asks.map(([price, quantity]) => ({
         price: parseFloat(price),
         quantity: parseFloat(quantity),
-        timestamp: data.E,
+        timestamp: Date.now(),
         venue: 'binance'
       }))
     };
 
-    // Update the last update ID
-    this.lastUpdateId = data.u;
-
-    this.onUpdateCallback?.(update);
+    this.onSnapshotCallback?.(snapshot);
   }
 
   // Schedule reconnection
   private scheduleReconnect(): void {
     this.reconnectAttempts++;
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1); // Exponential backoff
+    const delay = Math.min(
+      this.reconnectDelay * 2 ** (this.reconnectAttempts - 1),
+      30000 // Max delay of 30 seconds
+    );
 
     console.log(`Scheduling reconnect attempt ${this.reconnectAttempts} in ${delay}ms`);
 
@@ -230,9 +168,8 @@ export class BinanceWebSocketClient implements ExchangeWebSocketClient {
       this.ws.close(1000, 'Manual disconnect');
       this.ws = null;
     }
-    this.snapshotFetched = false;
-    this.lastUpdateId = 0;
     this.reconnectAttempts = 0;
+    this.onDisconnectedCallback?.();
   }
 
   // Get connection status

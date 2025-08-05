@@ -32,6 +32,7 @@ interface FiltersState {
     priceLevel: number | null;
     venue: VenueId | null;
   };
+  showNoVenuePopup:boolean;
 }
 
 const initialState: FiltersState = {
@@ -65,6 +66,7 @@ const initialState: FiltersState = {
     priceLevel: null,
     venue: null,
   },
+  showNoVenuePopup:false
 };
 
 const filtersSlice = createSlice({
@@ -89,6 +91,10 @@ const filtersSlice = createSlice({
 
     toggleQuantityFilter: (state) => {
       state.quantityThreshold.enabled = !state.quantityThreshold.enabled;
+    },
+
+    setShowNoVenuePopup:(state,action)=>{
+      state.showNoVenuePopup=action.payload
     },
 
     setTimeRange: (
@@ -171,6 +177,7 @@ export const {
   setSearchVenue,
   resetFilters,
   resetVisualizationFilters,
+  setShowNoVenuePopup,
 } = filtersSlice.actions;
 
 export default filtersSlice.reducer;

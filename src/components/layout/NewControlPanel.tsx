@@ -36,7 +36,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           Trading Venues
         </h3>
         <div className="space-y-2">
-          {VENUES.map((venue) => (
+          {VENUES.map((venue:any) => (
             <label
               key={venue}
               className="flex items-center space-x-3 cursor-pointer p-2 rounded-md hover:bg-gray-800 transition-colors"
