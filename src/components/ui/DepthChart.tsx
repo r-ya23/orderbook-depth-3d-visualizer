@@ -398,7 +398,7 @@ import { RootState } from "@/store";
 interface OrderbookEntry {
   price: number;
   quantity: number;
-  time: number;
+  time?: number;
   cumulativeQty?: number;
 }
 
@@ -429,7 +429,10 @@ const OrderbookDepthChart: React.FC = () => {
       (level) => level?.quantity || 0
     );
 
-    const calculateCumulative = (orders: any[], reverse = false) => {
+    const calculateCumulative = (
+      orders: OrderbookEntry[],
+      reverse = false
+    ) => {
       const sorted = [...orders].sort((a, b) =>
         reverse ? b.price - a.price : a.price - b.price
       );
