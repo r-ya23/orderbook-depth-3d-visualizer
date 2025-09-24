@@ -16,6 +16,7 @@ interface SettingsState {
     showStats: boolean;
     showTooltips: boolean;
     panelPosition: "left" | "right";
+    viewMode: "2d" | "3d";
   };
 }
 
@@ -57,6 +58,7 @@ const initialState: SettingsState = {
     showStats: false,
     showTooltips: true,
     panelPosition: "right",
+    viewMode: "3d",
   },
 };
 
@@ -146,6 +148,14 @@ const settingsSlice = createSlice({
       state.ui.showStats = !state.ui.showStats;
     },
 
+    toggleViewMode: (state) => {
+      state.ui.viewMode = state.ui.viewMode === "2d" ? "3d" : "2d";
+    },
+
+    setViewMode: (state, action: PayloadAction<"2d" | "3d">) => {
+      state.ui.viewMode = action.payload;
+    },
+
     resetSettings: (state) => {
       return initialState;
     },
@@ -168,6 +178,8 @@ export const {
   updateUISettings,
   toggleControlPanel,
   toggleStats,
+  toggleViewMode,
+  setViewMode,
   resetSettings,
 } = settingsSlice.actions;
 

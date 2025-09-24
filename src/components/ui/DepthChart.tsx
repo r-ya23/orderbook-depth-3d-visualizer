@@ -394,6 +394,7 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 import * as THREE from "three";
 import { RootState } from "@/store";
+import LoadingSpinner, { LoadingOverlay } from "./LoadingSpinner";
 
 interface OrderbookEntry {
   price: number;
@@ -403,13 +404,14 @@ interface OrderbookEntry {
 }
 
 const OrderbookDepthChart: React.FC = () => {
-  const { snapshot } = useSelector((state: RootState) => state.orderbook);
+  const { isLoading,snapshot } = useSelector((state: RootState) => state.orderbook);
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.OrthographicCamera | null>(null);
 
   // Memoized data processing to prevent unnecessary recalculations
+
   const processedData = useMemo(() => {
     if (!snapshot) return null;
 
@@ -740,9 +742,11 @@ const OrderbookDepthChart: React.FC = () => {
 
   if (!processedData) {
     return (
-      <div className="w-full h-full bg-gray-900 p-6 flex items-center justify-center">
-        <div className="text-white">No orderbook data available</div>
-      </div>
+      // <div className="w-full h-full bg-gray-900 p-6 flex items-center justify-center">
+      //   <div className="text-white">No orderbook data available</div>
+      // </div>
+      <LoadingOverlay isVisible={true} message="loading orderbook data"/>
+      // <LoadingSpinner variant="orderbook" message="fetching orderbook data"/>
     );
   }
 

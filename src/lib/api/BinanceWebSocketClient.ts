@@ -1,5 +1,6 @@
 import { OrderbookSnapshot, OrderbookUpdate } from '@/types/orderbook';
 import { ExchangeWebSocketClient } from './WebSocketManager';
+import { useSelector } from 'react-redux';
 
 // Binance WebSocket API endpoints
 export const BINANCE_WS_BASE_URL = 'wss://stream.binance.com:9443/ws';
@@ -27,16 +28,17 @@ export class BinanceWebSocketClient implements ExchangeWebSocketClient {
   private onConnectedCallback?: () => void;
   private onDisconnectedCallback?: () => void;
   private onErrorCallback?: (error: string) => void;
-
   constructor(
-    symbol: string = 'BTCUSDT',
+    symbol: string = "BTCUSDT",
     depth: number = 20,
-    updateSpeed: string = '100ms'
+    updateSpeed: string = "100ms"
   ) {
     this.symbol = symbol.toUpperCase();
     // For partial book depth stream, depth must be 5, 10, or 20.
     if (![5, 10, 20].includes(depth)) {
-      console.warn(`Binance partial book depth stream only supports levels 5, 10, or 20. Defaulting to 20.`);
+      console.warn(
+        `Binance partial book depth stream only supports levels 5, 10, or 20. Defaulting to 20.`
+      );
       this.depth = 20;
     } else {
       this.depth = depth;
@@ -68,7 +70,10 @@ export class BinanceWebSocketClient implements ExchangeWebSocketClient {
 
   // Connect to Binance WebSocket
   async connect(): Promise<void> {
-    if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.OPEN)) {
+    if (
+      this.isConnecting ||
+      (this.ws && this.ws.readyState === WebSocket.OPEN)
+    ) {
       return;
     }
 
@@ -93,53 +98,59 @@ export class BinanceWebSocketClient implements ExchangeWebSocketClient {
           const data: BinanceDepthSnapshot = JSON.parse(event.data);
           this.handleSnapshotMessage(data);
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
-          this.onErrorCallback?.('Error parsing WebSocket message');
+          console.error("Error parsing WebSocket message:", error);
+          this.onErrorCallback?.("Error parsing WebSocket message");
         }
       };
 
       this.ws.onclose = (event) => {
-        console.log('Binance WebSocket connection closed:', event.code, event.reason);
+        console.log(
+          "Binance WebSocket connection closed:",
+          event.code,
+          event.reason
+        );
         this.isConnecting = false;
         this.onDisconnectedCallback?.();
 
         // Attempt to reconnect if not manually closed
-        if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+        if (
+          event.code !== 1000 &&
+          this.reconnectAttempts < this.maxReconnectAttempts
+        ) {
           this.scheduleReconnect();
         }
       };
 
       this.ws.onerror = (error) => {
-        console.error('Binance WebSocket error:', error);
+        console.error("Binance WebSocket error:", error);
         this.isConnecting = false;
-        this.onErrorCallback?.('WebSocket connection error');
+        this.onErrorCallback?.("WebSocket connection error");
       };
-
     } catch (error) {
       this.isConnecting = false;
-      console.error('Failed to connect to Binance WebSocket:', error);
-      this.onErrorCallback?.('Failed to connect to WebSocket');
+      console.error("Failed to connect to Binance WebSocket:", error);
+      this.onErrorCallback?.("Failed to connect to WebSocket");
     }
   }
 
   private handleSnapshotMessage(data: BinanceDepthSnapshot): void {
     const snapshot: OrderbookSnapshot = {
       symbol: this.symbol,
-      venue: 'binance',
+      venue: "binance",
       timestamp: Date.now(),
       lastUpdateId: data.lastUpdateId,
       bids: data.bids.map(([price, quantity]) => ({
         price: parseFloat(price),
         quantity: parseFloat(quantity),
         timestamp: Date.now(),
-        venue: 'binance'
+        venue: "binance",
       })),
       asks: data.asks.map(([price, quantity]) => ({
         price: parseFloat(price),
         quantity: parseFloat(quantity),
         timestamp: Date.now(),
-        venue: 'binance'
-      }))
+        venue: "binance",
+      })),
     };
 
     this.onSnapshotCallback?.(snapshot);
@@ -153,7 +164,9 @@ export class BinanceWebSocketClient implements ExchangeWebSocketClient {
       30000 // Max delay of 30 seconds
     );
 
-    console.log(`Scheduling reconnect attempt ${this.reconnectAttempts} in ${delay}ms`);
+    console.log(
+      `Scheduling reconnect attempt ${this.reconnectAttempts} in ${delay}ms`
+    );
 
     setTimeout(() => {
       if (this.reconnectAttempts <= this.maxReconnectAttempts) {
@@ -165,7 +178,7 @@ export class BinanceWebSocketClient implements ExchangeWebSocketClient {
   // Disconnect from WebSocket
   disconnect(): void {
     if (this.ws) {
-      this.ws.close(1000, 'Manual disconnect');
+      this.ws.close(1000, "Manual disconnect");
       this.ws = null;
     }
     this.reconnectAttempts = 0;

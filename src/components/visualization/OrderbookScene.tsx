@@ -1,12 +1,19 @@
 "use client";
 import React, { useRef, useEffect, useCallback } from "react";
-import { Canvas, RootState } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Stats } from "@react-three/drei";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import OrderbookBars from "./OrderbookBars";
 import OrderbookDepthChart from "../ui/DepthChart";
+import ViewToggle from "../ui/ViewToggle";
+import ControlPanel from "../ui/ControlPanel";
 
 const OrderbookScene = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
+  const { viewMode, showStats, showControlPanel } = useSelector(
+    (state: RootState) => state.settings.ui
+  );
 
   // Handle context loss and restoration
   const handleContextLost = useCallback((event: WebGLContextEvent) => {
@@ -45,41 +52,59 @@ const OrderbookScene = () => {
 
   return (
     <div style={{ width: "100%", height: "100vh" }} ref={canvasRef}>
-      <OrderbookDepthChart />
+      {/* View Toggle */}
+      <ViewToggle />
 
-      <Canvas
-        camera={{
-          position: [15, 10, 15],
-          fov: 75,
-          near: 0.1,
-          far: 1000,
-        }}
-        gl={{
-          antialias: false, // Disable antialiasing to save memory
-          alpha: false,
-          powerPreference: "high-performance",
-          failIfMajorPerformanceCaveat: false,
-        }}
-        dpr={[1, 2]} // Limit device pixel ratio
-      >
-        {/* Simplified lighting to reduce GPU load */}
-        <ambientLight intensity={0.4} />
-        <directionalLight position={[10, 10, 5]} intensity={0.8} />
+      {/* Control Panel */}
+      {showControlPanel && <ControlPanel />}
 
-        {/* <OrderbookBars /> */}
+      {/* Conditional rendering based on view mode */}
+      {viewMode === "2d" ? (
+        <OrderbookDepthChart />
+      ) : (
+        <Canvas
+          camera={{
+            position: [15, 10, 15],
+            fov: 75,
+            near: 0.1,
+            far: 1000,
+          }}
+          gl={{
+            antialias: true,
+            alpha: false,
+            powerPreference: "high-performance",
+            failIfMajorPerformanceCaveat: false,
+          }}
+          dpr={[1, 2]}
+        >
+          {/* Enhanced lighting for 3D scene */}
+          <ambientLight intensity={0.3} />
+          <directionalLight position={[10, 10, 5]} intensity={0.7} />
+          <pointLight
+            position={[-10, 10, -10]}
+            intensity={0.3}
+            color="#0088ff"
+          />
+          <pointLight position={[10, 10, 10]} intensity={0.3} color="#ff8800" />
 
-        {/* Controls */}
-        <OrbitControls
-          enableDamping
-          dampingFactor={0.05}
-          target={[5, 5, 0]}
-          maxDistance={50}
-          minDistance={5}
-        />
+          {/* 3D Orderbook Bars */}
+          <OrderbookBars />
 
-        {/* Only show stats in development */}
-        {process.env.NODE_ENV === "development" && <Stats />}
-      </Canvas>
+          {/* Controls */}
+          <OrbitControls
+            enableDamping
+            dampingFactor={0.05}
+            target={[0, 4, 0]}
+            maxDistance={50}
+            minDistance={5}
+            maxPolarAngle={Math.PI / 2.2}
+            minPolarAngle={Math.PI / 6}
+          />
+
+          {/* Stats for development and when enabled */}
+          {(process.env.NODE_ENV === "development" || showStats) && <Stats />}
+        </Canvas>
+      )}
     </div>
   );
 };

@@ -6,11 +6,11 @@ import { RootState } from "@/store";
 import { setShowNoVenuePopup, toggleVenue } from "@/store/filterslice";
 import { VenueId } from "@/types/venue";
 import webSocketManager from "@/lib/api/websocket";
+import { getBinanceSymbols } from "@/lib/data/binanceSymbols";
 
 const ControlPanel = () => {
   const dispatch = useDispatch();
-  const { venues } = useSelector((state: RootState) => state.filters);
-  const novenueselected=useSelector((state:RootState)=>state.filters.showNoVenuePopup)
+  const { venues, showNoVenuePopup } = useSelector((state: RootState) => state.filters);
   const enabledVenues = Object.keys(venues).filter(
       (venue) => venues[venue as keyof typeof venues].enabled
     );
@@ -18,14 +18,11 @@ const ControlPanel = () => {
     useEffect(() => {
       if (enabledVenues.length === 0) {
         dispatch(setShowNoVenuePopup(true));
-        // console.log("No venue selected",novenueselected);
-        // return () => clearTimeout(timer);
       }
       else{
         dispatch(setShowNoVenuePopup(false));
-        // console.log("No venue selected", novenueselected);
       }
-    }, [enabledVenues]);
+    }, [enabledVenues, dispatch]);
 
   const handleVenueToggle = (venue: string) => {
     const venueId = venue as VenueId;
@@ -40,6 +37,21 @@ const ControlPanel = () => {
       }
     }
   };
+  const [symbols, setSymbols] = React.useState<{ symbol: string }[]>([]);
+  const [selectedSymbol, setSelectedSymbol] = React.useState<string>('');
+
+  useEffect(() => {
+    getBinanceSymbols().then((data) => {
+      setSymbols(data);
+      if (data.length > 0) {
+        setSelectedSymbol(data[0].symbol);
+      }
+    });
+  }, []);
+
+  const handleSymbolChange=(e: React.ChangeEvent<HTMLSelectElement>)=>{
+    setSelectedSymbol(e.target.value);
+  }
 
   return (
     <div className="w-80 bg-gray-900 border-l border-gray-700 p-4">
@@ -58,6 +70,17 @@ const ControlPanel = () => {
               <span className="text-white">{venue}</span>
             </label>
           ))}
+        </div>
+        <div className="flex flex-col space-y-2 mt-4">
+          <label htmlFor="symbol-select" className="text-md font-semibold text-white mb-2">Symbol</label>
+          <select 
+            id="symbol-select"
+            value={selectedSymbol} 
+            onChange={handleSymbolChange}
+            className="form-select bg-gray-800 border-gray-600 rounded text-white focus:ring-blue-500"
+          >
+            {symbols.map((s) => <option key={s.symbol} value={s.symbol}>{s.symbol}</option>)}
+          </select>
         </div>
       </div>
     </div>
