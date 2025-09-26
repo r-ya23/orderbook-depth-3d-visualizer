@@ -6,7 +6,7 @@ import { RootState } from "@/store";
 import { setShowNoVenuePopup, toggleVenue } from "@/store/filterslice";
 import { VenueId } from "@/types/venue";
 import webSocketManager from "@/lib/api/websocket";
-import { getBinanceSymbols } from "@/lib/data/binanceSymbols";
+// import { getBinanceSymbols } from "@/lib/data/binanceSymbols";
 
 const ControlPanel = () => {
   const dispatch = useDispatch();
