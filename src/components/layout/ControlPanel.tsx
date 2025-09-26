@@ -40,18 +40,18 @@ const ControlPanel = () => {
   const [symbols, setSymbols] = React.useState<{ symbol: string }[]>([]);
   const [selectedSymbol, setSelectedSymbol] = React.useState<string>('');
 
-  useEffect(() => {
-    getBinanceSymbols().then((data) => {
-      setSymbols(data);
-      if (data.length > 0) {
-        setSelectedSymbol(data[0].symbol);
-      }
-    });
-  }, []);
+  // useEffect(() => {
+  //   getBinanceSymbols().then((data) => {
+  //     setSymbols(data);
+  //     if (data.length > 0) {
+  //       setSelectedSymbol(data[0].symbol);
+  //     }
+  //   });
+  // }, []);
 
-  const handleSymbolChange=(e: React.ChangeEvent<HTMLSelectElement>)=>{
-    setSelectedSymbol(e.target.value);
-  }
+  // const handleSymbolChange=(e: React.ChangeEvent<HTMLSelectElement>)=>{
+  //   setSelectedSymbol(e.target.value);
+  // }
 
   return (
     <div className="w-80 bg-gray-900 border-l border-gray-700 p-4">
@@ -71,17 +71,17 @@ const ControlPanel = () => {
             </label>
           ))}
         </div>
-        <div className="flex flex-col space-y-2 mt-4">
-          <label htmlFor="symbol-select" className="text-md font-semibold text-white mb-2">Symbol</label>
-          <select 
-            id="symbol-select"
-            value={selectedSymbol} 
-            onChange={handleSymbolChange}
-            className="form-select bg-gray-800 border-gray-600 rounded text-white focus:ring-blue-500"
-          >
-            {symbols.map((s) => <option key={s.symbol} value={s.symbol}>{s.symbol}</option>)}
-          </select>
-        </div>
+        {/* <div className="flex flex-col space-y-2 mt-4"> */}
+          {/* <label htmlFor="symbol-select" className="text-md font-semibold text-white mb-2">Symbol</label> */}
+          {/* <select  */}
+            {/* id="symbol-select" */}
+            {/* value={selectedSymbol}  */}
+            {/* onChange={handleSymbolChange} */}
+            {/* className="form-select bg-gray-800 border-gray-600 rounded text-white focus:ring-blue-500" */}
+          {/* > */}
+            {/* {symbols.map((s) => <option key={s.symbol} value={s.symbol}>{s.symbol}</option>)} */}
+          {/* </select> */}
+        {/* </div> */}
       </div>
     </div>
   );
